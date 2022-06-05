@@ -7,6 +7,7 @@ export const generateCitizensHierarchy = async (req, res) => {
         let hierarchy = await citizensModel.generateCitizensHierarchy(hierarchyChain);
         res.send(hierarchy);
     } catch (e) {
+        console.log(e)
         res.sendStatus(500)
     }
 };
