@@ -90,7 +90,8 @@ export const generateCitizensHierarchy = async (chain) => {
         }
     }
     const parseCombination = (comb) => {
-        let output = comb.replaceAll('"]["', '#');
+        // let output = comb.replaceAll('', '#');
+        let output = comb.replace(/"]\["/g, '#');
         return output.substring(2, output.length - 2).split('#')
     }
     const hierarchy = citizens[0];
