@@ -2,7 +2,7 @@ import express, {json, urlencoded} from "express";
 import pgPromise from "pg-promise";
 import cors from "cors";
 import * as dotenv from "dotenv";
-import {groupByChain, loadData} from "./load-data.js";
+import {groupByChain} from "./load-data.js";
 
 dotenv.config()
 
@@ -15,7 +15,7 @@ app.use(json());
 app.use(cors({credentials: true, origin: process.env.CLIENT_URL}));
 app.use(urlencoded({limit: "5mb", extended: true}));
 app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", process.env.CLIENT_URL);
+    res.setHeader("Access-Control-Allow-Origin", '*');
     res.setHeader("Access-Control-Allow-Credentials", true);
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
     res.setHeader(
@@ -28,12 +28,9 @@ app.use((req, res, next) => {
 const router = express.Router();
 app.use("/api", router);
 
-// router.get("/tests/diagnostic/:courseId", authMiddleware, generateDiagnosticTest);
-// router.get("/tests/general/:courseId", authMiddleware, generateGeneralTest);
-// router.post("/tests", authMiddleware, generateTest);
-// router.post("/tests/save-answers", authMiddleware, saveTestAnswers);
-// router.post("/tests/history", authMiddleware, getTestingHistory);
-// router.get("/has-active-configuration/:topicId", authMiddleware, hasActiveConfiguration);
+router.get("/data", async (req, res) => {
+    res.send(await groupByChain())
+});
 
 db.connect()
     .then((obj) => {
@@ -43,8 +40,6 @@ db.connect()
     .then(() => {
         app.listen(port, () => {
             console.log(`API server started at: ${process.env.API_URL}`)
-            // loadData()
-            groupByChain()
         })
     })
     .catch(err => {

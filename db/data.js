@@ -967,23 +967,4 @@ export const citizens = [
             }
         ]
     },
-    {
-        "id": 1,
-        "name": "Павел123",
-        "city_id": 1,
-        "groups": [
-            {
-                "type": "city",
-                "name": "Москва г."
-            },
-            {
-                "type": "district",
-                "name": "Выборгский р-н"
-            },
-            {
-                "type": "street",
-                "name": "Гашека ул."
-            }
-        ]
-    },
 ];

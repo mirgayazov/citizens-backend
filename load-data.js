@@ -1,37 +1,8 @@
-import {cities, citizens} from "./initial-data.js";
 import db from "./server.js";
-import {
-    createCitizenQuery,
-    createCityQuery,
-    createGroupQuery, getAll, getCitizenGroupsQuery, getClusterQuery, getNamesByType,
-} from "./citizens/citizens-sql.js";
+import {getAll, getCitizenGroupsQuery, getNamesByType} from "./citizens/citizens-sql.js";
 import pkg from 'lodash';
 
-const {chunk, isEqual} = pkg;
-
-export const loadData = () => {
-    cities.forEach(city => {
-        db.one(createCityQuery, [city.id, city.name, city.data])
-            .then(() => {
-                let cluster = citizens.filter(citizen => citizen.groups.find(group => group["type"] === "city").name.split(' ')[0] === city.name);
-                cluster = cluster.map(citizen => {
-                    citizen.city_id = city.id
-                    return citizen
-                })
-                cluster.forEach(citizen => {
-                    db.one(createCitizenQuery, [citizen.name, citizen.city_id])
-                        .then((result) => {
-                            citizen.groups.forEach(group => {
-                                db.one(createGroupQuery, [result.id, group.type, group.name])
-                                    .then((result) => {
-                                        console.log(result)
-                                    })
-                            })
-                        })
-                })
-            })
-    })
-};
+const {chunk} = pkg;
 
 const groupBy = function (xs, key) {
     return xs.reduce(function (rv, x) {
@@ -49,8 +20,11 @@ const generate = (arr) => {
     let output = [];
 
     for (let i = 0; i < arr.length; i++) {
-        let prefix = output[i - 1] ?? '';
+        let prefix = output[output.length - 1] ?? '';
         output.push(prefix + `["${arr[i]}"]`)
+
+        output.push(output[output.length - 1] + `["nodes"]`)
+        // output.push(prefix + `["${arr[i]}"]` + `["nodes"]`)
     }
 
     return output
@@ -60,9 +34,11 @@ export const groupByChain = async () => {
     let allCitizens = await db.any(getAll);
     let citizens = [];
 
-    // const chain = ['city', 'district', 'street'];
-    // const chain = ['district', 'city', 'street'];
-    const chain = ['street', 'district', 'city'];
+    // const chain = ['city', 'street'];
+    // const chain = ['city', 'district'];
+    // const chain = ['city','home','country'];
+    const chain = ['city', 'district', 'street'];
+    // const chain = ['country', 'city', 'district', 'street', 'home'];
 
     for (let i = 0; i < chain.length; i++) {
         let filter = chain[i];
@@ -97,13 +73,22 @@ export const groupByChain = async () => {
     const hierarchy = citizens[0];
     let combinations = await getCombinations(chain);
     let targetArrays = [];
+
+    function contains(where, what) {
+        for (let i = 0; i < what.length; i++) {
+            if (where.indexOf(what[i]) === -1) return false;
+        }
+        return true;
+    }
+
     for (let i = 0; i < combinations.length; i++) {
         let combination = combinations[i];
         let streetCitizens = eval(`hierarchy${combination}`);
         streetCitizens = streetCitizens.filter(citizen => {
             let x = citizen.groups.sort();
             let y = parseCombination(combination).sort();
-            return isEqual(x, y)
+            // return isEqual(x, y)
+            return contains(x, y)
         })
         if (streetCitizens.length) {
             targetArrays.push([generate(parseCombination(combination)), streetCitizens])
@@ -118,20 +103,39 @@ export const groupByChain = async () => {
             let key = keys[j];
             eval(`
                 if (!result${key}) {
-                    result${key} = {}
+                    result${key} = {
+                        label: (() => {
+                            let ind = key.split('').lastIndexOf('[');
+                            return key.substring(ind + 2, key.length - 2)
+                        })(),
+                        index: j / 2,
+                        nodes: {}
+                    }
                 }
             `)
         }
     }
 
+    const createObjFrom = (arr) => {
+        return arr.reduce((acc, cur) => ({...acc, [cur.citizenId]: cur}), {})
+    }
+
     for (let i = 0; i < targetArrays.length; i++) {
         let address = targetArrays[i];
         let keys = address[0];
-        let lastKey= keys[keys.length-1];
-        eval(`result${lastKey} = address[1]`)
+        let lastKey = keys[keys.length - 1];
+        let citizens = address[1].map(citizen => {
+            return {
+                ...citizen,
+                label: citizen.citizenName,
+                nodes: {}
+            }
+        })
+        eval(`result${lastKey} = createObjFrom(citizens)`)
     }
 
-    console.log(JSON.stringify(result))
+
+    return result
 };
 
 export const getCombinations = async (chain) => {
