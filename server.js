@@ -13,7 +13,6 @@ const app = express();
 
 app.use(json());
 app.use(cors({credentials: true, origin: process.env.CLIENT_URL}));
-app.use(urlencoded({limit: "5mb", extended: true}));
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", process.env.CLIENT_URL);
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
