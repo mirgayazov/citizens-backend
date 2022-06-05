@@ -24,8 +24,6 @@ SET row_security = off;
 
 SET default_tablespace = '';
 
-SET default_table_access_method = heap;
-
 --
 -- TOC entry 204 (class 1259 OID 48302)
 -- Name: cities; Type: TABLE; Schema: public; Owner: postgres
