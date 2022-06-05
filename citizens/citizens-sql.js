@@ -6,7 +6,7 @@ export const createCitizenQuery = () => {
     return `insert into "citizens" ("name", "cityId") values ($1, $2) returning id`
 };
 
-export const getUniqueTypes = () => {
+export const getUniqueTypesQuery = () => {
     return `select distinct "type" from "citizensGroups"`
 }
 
@@ -19,9 +19,10 @@ export const getNamesByType = (filter) => {
 };
 
 export const getAll = () => {
-    return `SELECT "citizens"."name" as "citizenName", "citizensGroups".*
+    return `SELECT "citizens"."name" as "citizenName", "citizensGroups".*, "cities"."name" as "cityName", "cities"."data" as "cityData"
             FROM "citizens"
-            JOIN "citizensGroups" ON "citizensGroups"."citizenId" = "citizens"."id"`
+            JOIN "citizensGroups" ON "citizensGroups"."citizenId" = "citizens"."id"
+            JOIN "cities" ON "cities"."id" = "citizens"."cityId"`
 };
 
 export const getCitizenGroupsQuery = () => {

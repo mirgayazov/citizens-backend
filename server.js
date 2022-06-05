@@ -2,7 +2,7 @@ import express, {json, urlencoded} from "express";
 import pgPromise from "pg-promise";
 import cors from "cors";
 import * as dotenv from "dotenv";
-import {groupByChain} from "./load-data.js";
+import {generateCitizensHierarchy, getUniqueTypes} from "./citizens/citizens-controller.js";
 
 dotenv.config()
 
@@ -15,8 +15,7 @@ app.use(json());
 app.use(cors({credentials: true, origin: process.env.CLIENT_URL}));
 app.use(urlencoded({limit: "5mb", extended: true}));
 app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", '*');
-    res.setHeader("Access-Control-Allow-Credentials", true);
+    res.setHeader("Access-Control-Allow-Origin", process.env.CLIENT_URL);
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
     res.setHeader(
         "Access-Control-Allow-Headers",
@@ -28,9 +27,8 @@ app.use((req, res, next) => {
 const router = express.Router();
 app.use("/api", router);
 
-router.get("/data", async (req, res) => {
-    res.send(await groupByChain())
-});
+router.post("/hierarchy", generateCitizensHierarchy);
+router.get("/types", getUniqueTypes);
 
 db.connect()
     .then((obj) => {

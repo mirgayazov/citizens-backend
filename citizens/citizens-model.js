@@ -1,6 +1,5 @@
-
-import db from "./server.js";
-import {getAll, getCitizenGroupsQuery, getNamesByType} from "./citizens/citizens-sql.js";
+import db from "../server.js";
+import {getAll, getCitizenGroupsQuery, getNamesByType, getUniqueTypesQuery} from "./citizens-sql.js";
 import pkg from 'lodash';
 
 const {chunk} = pkg;
@@ -22,23 +21,47 @@ const generate = (arr) => {
 
     for (let i = 0; i < arr.length; i++) {
         let prefix = output[output.length - 1] ?? '';
-        output.push(prefix + `["${arr[i]}"]`)
-
-        output.push(output[output.length - 1] + `["nodes"]`)
-        // output.push(prefix + `["${arr[i]}"]` + `["nodes"]`)
+        output.push(prefix + `["${arr[i]}"]`);
+        output.push(output[output.length - 1] + `["nodes"]`);
     }
 
     return output
 }
 
+export const getCombinations = async (chain) => {
+    let names = [];
+    for (let i = 0; i < chain.length; i++) {
+        let filter = chain[i];
+        let currentNames = await db.any(getNamesByType(filter));
+        names.push(Array.from(currentNames, n => `["${n.name}"]`))
+    }
+
+    const makeCombinations = (arr1, arr2) => {
+        let combinations = [];
+
+        for (let i = 0; i < arr1.length; i++) {
+            for (let j = 0; j < arr2.length; j++) {
+                combinations.push(`${arr1[i]}${arr2[j]}`)
+            }
+        }
+
+        return combinations
+    }
+
+    while (names.length > 1) {
+        let [arr1, arr2] = chunk(names, 2)[0];
+        let combinations = makeCombinations(arr1, arr2);
+        names.shift()
+        names.shift()
+        names.unshift(combinations);
+    }
+
+    return names[0]
+};
+
 export const generateCitizensHierarchy = async (chain) => {
     let allCitizens = await db.any(getAll);
     let citizens = [];
-
-    // const chain = ['city', 'street'];
-    // const chain = ['city', 'district'];
-    // const chain = ['city','home','country'];
-    // const chain = ['country', 'city', 'district', 'street', 'home'];
 
     for (let i = 0; i < chain.length; i++) {
         let filter = chain[i];
@@ -128,7 +151,6 @@ export const generateCitizensHierarchy = async (chain) => {
             return {
                 ...citizen,
                 label: citizen.citizenName,
-                nodes: {}
             }
         })
         eval(`result${lastKey} = createObjFrom(citizens)`)
@@ -138,35 +160,6 @@ export const generateCitizensHierarchy = async (chain) => {
     return result
 };
 
-export const getCombinations = async (chain) => {
-    let names = [];
-    for (let i = 0; i < chain.length; i++) {
-        let filter = chain[i];
-        let currentNames = await db.any(getNamesByType(filter));
-        names.push(Array.from(currentNames, n => `["${n.name}"]`))
-    }
+const getUniqueTypes = async () => await db.any(getUniqueTypesQuery);
 
-    const makeCombinations = (arr1, arr2) => {
-        let combinations = [];
-
-        for (let i = 0; i < arr1.length; i++) {
-            for (let j = 0; j < arr2.length; j++) {
-                combinations.push(`${arr1[i]}${arr2[j]}`)
-            }
-        }
-
-        return combinations
-    }
-
-    while (names.length > 1) {
-        let [arr1, arr2] = chunk(names, 2)[0];
-        let combinations = makeCombinations(arr1, arr2);
-        names.shift()
-        names.shift()
-        names.unshift(combinations);
-    }
-
-    return names[0]
-};
-
-export default {generateCitizensHierarchy}
+export default {generateCitizensHierarchy, getUniqueTypes}

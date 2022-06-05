@@ -1,17 +1,21 @@
 import citizensModel from "./citizens-model.js";
 
-export const generateCitizensHierarchy = (req, res) => {
+export const generateCitizensHierarchy = async (req, res) => {
     const {hierarchyChain} = req.body;
 
-    citizensModel.generateCitizensHierarchy()
-    testsModel.generateTest(topicId, (err, data) => {
-        if (err) {
-            return res.json(err);
-        }
+    try {
+        let hierarchy = await citizensModel.generateCitizensHierarchy(hierarchyChain);
+        res.send(hierarchy);
+    } catch (e) {
+        res.sendStatus(500)
+    }
+};
 
-        return res.json({
-            test: data,
-            statusCode: 200
-        })
-    })
+export const getUniqueTypes = async (req, res) => {
+    try {
+        let types = await citizensModel.getUniqueTypes();
+        res.send(types);
+    } catch (e) {
+        res.sendStatus(500)
+    }
 };
