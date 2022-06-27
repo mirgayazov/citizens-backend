@@ -2,6 +2,7 @@ import express, {json, urlencoded} from "express";
 import pgPromise from "pg-promise";
 import cors from "cors";
 import * as dotenv from "dotenv";
+import bodyParser from 'body-parser'
 import {generateCitizensHierarchy, getUniqueTypes} from "./citizens/citizens-controller.js";
 
 dotenv.config()
@@ -11,7 +12,9 @@ const db = pgp(`postgres://postgres:${process.env.PG_PASSWORD}@localhost:5432/ci
 const port = process.env.PORT || 5000;
 const app = express();
 
-app.use(json());
+app.use(json({limit: '100000000000mb'}));
+app.use(bodyParser.json({limit: '100000000000mb', extended: true}))
+app.use(bodyParser.urlencoded({limit: '100000000000mb', extended: true}))
 app.use(cors({credentials: true, origin: process.env.CLIENT_URL}));
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", process.env.CLIENT_URL);

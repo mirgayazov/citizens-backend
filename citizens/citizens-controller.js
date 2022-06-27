@@ -1,10 +1,10 @@
 import citizensModel from "./citizens-model.js";
 
 export const generateCitizensHierarchy = async (req, res) => {
-    const {hierarchyChain} = req.body;
+    const {hierarchyChain, context, keys} = req.body;
 
     try {
-        let hierarchy = await citizensModel.generateCitizensHierarchy(hierarchyChain);
+        let hierarchy = await citizensModel.generateCitizensHierarchy(hierarchyChain, context, keys);
         res.send(hierarchy);
     } catch (e) {
         console.log(e)
