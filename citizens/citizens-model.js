@@ -282,7 +282,10 @@ export const generateCitizensHierarchy = async (chain, context, keyNames) => {
                 for (const key of keyNames) {
                 }
             }
-            label = label.substring(0, label.length-2)
+
+            if (context) {
+                label = label.substring(0, label.length - 2)
+            }
             return {
                 ...citizen,
                 label
